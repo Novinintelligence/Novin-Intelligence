@@ -20,27 +20,22 @@ public class PythonBridge {
     }
     
     /// Process security request through Python AI engine
-    public func processRequest(_ requestJson: String, clientId: String = "ios_client") -> Result<String, NovinIntelligenceError> {
+    public func processRequest(_ requestJson: String, clientId: String = "ios_client") throws -> String {
         guard isInitialized else {
-            return .failure(.notInitialized)
+            throw NovinIntelligenceError.notInitialized
         }
         
-        return bridgeQueue.sync {
-            do {
-                // Parse JSON to validate input
-                guard let data = requestJson.data(using: .utf8),
-                      let _ = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-                    return .failure(.invalidInput("Invalid JSON format"))
-                }
-                
-                // Call Python AI engine (simulated with actual AI logic)
-                let result = simulateAIProcessing(requestJson, clientId: clientId)
-                
-                return .success(result)
-                
-            } catch {
-                return .failure(.processingFailed("JSON parsing failed: \(error)"))
+        return try bridgeQueue.sync {
+            // Parse JSON to validate input
+            guard let data = requestJson.data(using: .utf8),
+                  let _ = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                throw NovinIntelligenceError.invalidInput("Invalid JSON format")
             }
+            
+            // Call Python AI engine (simulated with actual AI logic)
+            let result = simulateAIProcessing(requestJson, clientId: clientId)
+            
+            return result
         }
     }
     

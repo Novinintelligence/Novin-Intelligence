@@ -1,6 +1,6 @@
 #include "NovinPythonBridge.h"
 
-#include <Python.h>
+#include "../../Python.xcframework/ios-arm64_x86_64-simulator/include/python3.13/Python.h"
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
