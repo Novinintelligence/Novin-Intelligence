@@ -1,0 +1,60 @@
+// swift-tools-version:5.7
+import PackageDescription
+
+let packageDirectory = #filePath.replacingOccurrences(of: "/Package.swift", with: "")
+
+let package = Package(
+    name: "NovinIntelligence",
+    platforms: [
+        .iOS(.v14)
+    ],
+    products: [
+        .library(
+            name: "NovinIntelligence",
+            targets: ["NovinIntelligence"]
+        )
+    ],
+    targets: [
+        .binaryTarget(
+            name: "PythonSupport",
+            path: "Python.xcframework"
+        ),
+        .target(
+            name: "NovinPythonBridge",
+            dependencies: ["PythonSupport"],
+            path: "Sources/NovinPythonBridge",
+            publicHeadersPath: "include",
+            cSettings: [
+                .headerSearchPath("include"),
+                .unsafeFlags([
+                    "-fno-modules",
+                    "-fmodule-map-file=\(packageDirectory)/Python.xcframework/ios-arm64/Python.framework/Headers/module.modulemap",
+                    "-I\(packageDirectory)/Python.xcframework/ios-arm64/Python.framework/Headers",
+                    "-I\(packageDirectory)/Python.xcframework/ios-arm64/include/python3.13",
+                    "-F\(packageDirectory)/Python.xcframework/ios-arm64"
+                ], .when(platforms: [.iOS], architectures: [.arm64])),
+                .unsafeFlags([
+                    "-fno-modules",
+                    "-fmodule-map-file=\(packageDirectory)/Python.xcframework/ios-arm64_x86_64-simulator/Python.framework/Headers/module.modulemap",
+                    "-I\(packageDirectory)/Python.xcframework/ios-arm64_x86_64-simulator/Python.framework/Headers",
+                    "-I\(packageDirectory)/Python.xcframework/ios-arm64_x86_64-simulator/include/python3.13",
+                    "-F\(packageDirectory)/Python.xcframework/ios-arm64_x86_64-simulator"
+                ], .when(platforms: [.iOS], architectures: [.x86_64]))
+            ]
+        ),
+        .target(
+            name: "NovinIntelligence",
+            dependencies: [
+                "NovinPythonBridge",
+                "PythonSupport"
+            ],
+            resources: [
+                .process("Resources") // Include embedded AI resources
+            ]
+        ),
+        .testTarget(
+            name: "NovinIntelligenceTests",
+            dependencies: ["NovinIntelligence"]
+        )
+    ]
+)
