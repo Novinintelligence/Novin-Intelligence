@@ -20,7 +20,7 @@ public final class NovinIntelligence: @unchecked Sendable {
         guard !isInitialized else { return }
         
         return try await withCheckedThrowingContinuation { continuation in
-            processingQueue.async {
+            processingQueue.async(execute: {
                 do {
                     try self.pythonBridge.initialize()
                     self.isInitialized = true
@@ -29,7 +29,7 @@ public final class NovinIntelligence: @unchecked Sendable {
                 } catch {
                     continuation.resume(throwing: NovinIntelligenceError.processingFailed("Initialization failed: \(error)"))
                 }
-            }
+            })
         }
     }
     
@@ -89,78 +89,62 @@ public final class NovinIntelligence: @unchecked Sendable {
             throw NovinIntelligenceError.processingFailed("Invalid JSON response")
         }
         
-        guard let threatAssessment = json["threatAssessment"] as? [String: Any],
-              let levelString = threatAssessment["level"] as? String,
-              let threatLevel = ThreatLevel(rawValue: levelString),
-              let confidence = threatAssessment["confidence"] as? Double else {
-            throw NovinIntelligenceError.processingFailed("Invalid threat assessment format")
+        // Extract fields from response
+        guard let threatLevelString = json["threatLevel"] as? String,
+              let threatLevel = ThreatLevel(rawValue: threatLevelString),
+              let confidence = json["confidence"] as? Double,
+              let processingTimeMs = json["processingTimeMs"] as? Double,
+              let reasoning = json["reasoning"] as? String else {
+            throw NovinIntelligenceError.processingFailed("Missing required fields in response")
         }
         
-        let processingTimeMs = json["processingTimeMs"] as? Double ?? 0.0
-        let reasoning = (json["reasoning"] as? [String: Any])?["primaryFactors"] as? [String]
-        let reasoningString = reasoning?.joined(separator: ", ") ?? "AI assessment completed"
         let requestId = json["requestId"] as? String
-        let timestamp = json["timestamp"] as? String
+        let timestamp = json["timestamp"].flatMap { "\($0)" }
         
         return SecurityAssessment(
             threatLevel: threatLevel,
             confidence: confidence,
             processingTimeMs: processingTimeMs,
-            reasoning: reasoningString,
+            reasoning: reasoning,
             requestId: requestId,
             timestamp: timestamp
         )
     }
-}
-
-// MARK: - Convenience Extensions
-
-@available(iOS 15.0, macOS 12.0, *)
-extension NovinIntelligence {
     
-    /// Quick motion assessment
-    public func assessMotion(confidence: Double, location: (lat: Double, lon: Double)? = nil) async throws -> SecurityAssessment {
-        let locationJson = location.map { "{\"lat\": \($0.lat), \"lon\": \($0.lon)}" } ?? "null"
-        
-        let timestamp = ISO8601DateFormatter().string(from: Date())
-
-        let requestJson = """
+    /// Assess a motion event
+    public func assessMotion(confidence: Double, location: String = "unknown") async throws -> SecurityAssessment {
+        let motionJson = """
         {
-            "systemMode": "home",
-            "location": \(locationJson),
-            "deviceInfo": {"battery": 85},
-            "events": [{
-                "type": "motion",
-                "confidence": \(confidence),
-                "timestamp": "\(timestamp)",
-                "metadata": {"deviceId": "convenience_motion"}
-            }]
+            "type": "motion",
+            "confidence": \(confidence),
+            "timestamp": \(Date().timeIntervalSince1970),
+            "metadata": {
+                "location": "\(location)",
+                "sensor_type": "motion_detector",
+                "home_mode": "standard"
+            }
         }
         """
         
-        return try await assess(requestJson: requestJson)
+        return try await assess(requestJson: motionJson)
     }
     
-    /// Quick face detection assessment
-    public func assessFaceDetection(confidence: Double, isKnown: Bool = false, location: (lat: Double, lon: Double)? = nil) async throws -> SecurityAssessment {
-        let locationJson = location.map { "{\"lat\": \($0.lat), \"lon\": \($0.lon)}" } ?? "null"
-        
-        let timestamp = ISO8601DateFormatter().string(from: Date())
-
-        let requestJson = """
+    /// Assess a door event
+    public func assessDoorEvent(isOpening: Bool, location: String = "frontDoor") async throws -> SecurityAssessment {
+        let doorJson = """
         {
-            "systemMode": "away",
-            "location": \(locationJson),
-            "deviceInfo": {"battery": 90},
-            "events": [{
-                "type": "face",
-                "confidence": \(confidence),
-                "timestamp": "\(timestamp)",
-                "metadata": {"is_known": "\(isKnown)"}
-            }]
+            "type": "door_motion",
+            "confidence": 0.9,
+            "timestamp": \(Date().timeIntervalSince1970),
+            "metadata": {
+                "location": "\(location)",
+                "motion_type": "\(isOpening ? "opening" : "closing")",
+                "sensor_type": "contact_sensor",
+                "home_mode": "standard"
+            }
         }
         """
         
-        return try await assess(requestJson: requestJson)
+        return try await assess(requestJson: doorJson)
     }
 }
