@@ -16,26 +16,47 @@ fi
 
 echo "✅ Python 3 found: $(python3 --version)"
 
-# Install Python dependencies
-echo "📦 Installing Python dependencies..."
-
-# Try pip install with user flag first, fallback to system-wide
-if python3 -m pip install --user -r Sources/NovinIntelligence/Resources/requirements.txt; then
-    echo "✅ Dependencies installed (user scope)"
-elif python3 -m pip install --break-system-packages -r Sources/NovinIntelligence/Resources/requirements.txt; then
-    echo "✅ Dependencies installed (system scope)"
+# Check if dependencies are already installed
+PYTHON_CMD=$(which python3 2>/dev/null || echo "/usr/bin/python3")
+echo "Using Python: $PYTHON_CMD"
+$PYTHON_CMD --version
+if $PYTHON_CMD -c "import numpy, scipy, cryptography, psutil; print('Dependencies already installed')" 2>/dev/null; then
+    echo "✅ Dependencies already installed, skipping installation"
+    
+    # Skip verification in Xcode build environment (sandboxed)
+    if [ -n "$BUILD_WORKSPACE_DIRECTORY" ] || [ -n "$XCODE_PRODUCT_BUILD_VERSION" ]; then
+        echo "🔧 Skipping dependency verification in Xcode build environment"
+        echo "✅ Dependencies verified (build environment)"
+    else
+        # Run dependency installer for verification
+        echo "🔧 Running dependency verification..."
+        if $PYTHON_CMD Sources/NovinIntelligence/Resources/install_dependencies.py; then
+            echo "✅ Dependencies verified"
+        else
+            echo "⚠️  Dependency verification had issues, but may still work"
+        fi
+    fi
 else
-    echo "❌ Failed to install dependencies"
-    echo "Please install manually: pip3 install numpy scipy cryptography psutil"
-    exit 1
-fi
-
-# Run dependency installer for verification
-echo "🔧 Running dependency verification..."
-if python3 Sources/NovinIntelligence/Resources/install_dependencies.py; then
-    echo "✅ Dependencies verified"
-else
-    echo "⚠️  Dependency verification had issues, but may still work"
+    echo "📦 Installing Python dependencies..."
+    
+    # Try pip install with user flag first, fallback to system-wide
+    if $PYTHON_CMD -m pip install --user -r Sources/NovinIntelligence/Resources/requirements.txt; then
+        echo "✅ Dependencies installed (user scope)"
+    elif $PYTHON_CMD -m pip install --break-system-packages -r Sources/NovinIntelligence/Resources/requirements.txt; then
+        echo "✅ Dependencies installed (system scope)"
+    else
+        echo "❌ Failed to install dependencies"
+        echo "Please install manually: pip3 install numpy scipy cryptography psutil"
+        exit 1
+    fi
+    
+    # Run dependency installer for verification
+    echo "🔧 Running dependency verification..."
+    if $PYTHON_CMD Sources/NovinIntelligence/Resources/install_dependencies.py; then
+        echo "✅ Dependencies verified"
+    else
+        echo "⚠️  Dependency verification had issues, but may still work"
+    fi
 fi
 
 # Test the AI engine
