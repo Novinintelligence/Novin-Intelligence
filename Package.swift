@@ -24,10 +24,11 @@ let package = Package(
             publicHeadersPath: "include",
             cSettings: [
                 .headerSearchPath("include"),
-                .define("PY_SSIZE_T_CLEAN")
-            ],
-            linkerSettings: [
-                .linkedFramework("Python", .when(platforms: [.iOS]))
+                .headerSearchPath("../../Python.xcframework/ios-arm64_x86_64-simulator/include/python3.13"),
+                .headerSearchPath("../../Python.xcframework/ios-arm64/include/python3.13"),
+                .unsafeFlags([
+                    "-fno-modules"
+                ])
             ]
         ),
         .target(
