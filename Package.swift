@@ -23,12 +23,7 @@ let package = Package(
             path: "Sources/NovinPythonBridge",
             publicHeadersPath: "include",
             cSettings: [
-                .headerSearchPath("include"),
-                .unsafeFlags([
-                    "-fno-modules",
-                    "-F", "Python.xcframework/ios-arm64",
-                    "-F", "Python.xcframework/ios-arm64_x86_64-simulator"
-                ])
+                .headerSearchPath("include")
             ]
         ),
         .target(
