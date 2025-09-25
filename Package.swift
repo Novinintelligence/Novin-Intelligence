@@ -23,7 +23,11 @@ let package = Package(
             path: "Sources/NovinPythonBridge",
             publicHeadersPath: "include",
             cSettings: [
-                .headerSearchPath("include")
+                .headerSearchPath("include"),
+                .define("PY_SSIZE_T_CLEAN")
+            ],
+            linkerSettings: [
+                .linkedFramework("Python", .when(platforms: [.iOS]))
             ]
         ),
         .target(
