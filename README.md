@@ -10,7 +10,9 @@ Transform your app into an intelligent security system with real-time threat det
 
 **Using Swift Package Manager (Recommended):**
 ```
-File → Add Packages... → Enter: https://github.com/your-org/NovinIntelligenceSDK
+1. In Xcode: File → Add Package Dependencies
+2. Enter URL: https://github.com/Novinintelligence/Novin-Intelligence.git
+3. Add Package → Select NovinIntelligence
 ```
 
 **Manual Integration:**
