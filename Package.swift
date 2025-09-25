@@ -1,8 +1,6 @@
 // swift-tools-version:5.7
 import PackageDescription
 
-let packageDirectory = #filePath.replacingOccurrences(of: "/Package.swift", with: "")
-
 let package = Package(
     name: "NovinIntelligence",
     platforms: [
@@ -27,11 +25,7 @@ let package = Package(
             cSettings: [
                 .headerSearchPath("include"),
                 .unsafeFlags([
-                    "-fno-modules",
-                    "-F", "\(packageDirectory)/Python.xcframework/ios-arm64",
-                    "-F", "\(packageDirectory)/Python.xcframework/ios-arm64_x86_64-simulator",
-                    "-I", "\(packageDirectory)/Python.xcframework/ios-arm64/Python.framework/Headers",
-                    "-I", "\(packageDirectory)/Python.xcframework/ios-arm64_x86_64-simulator/Python.framework/Headers"
+                    "-fno-modules"
                 ])
             ]
         ),
@@ -49,7 +43,8 @@ let package = Package(
                 .copy("Resources/novin_ai_bridge.py")
             ],
             plugins: [
-                .plugin(name: "SetupAIDependencies")
+                // .plugin(name: "SetupAIDependencies")  // Disabled for reliable builds
+                // Users should run: bash setup_novin_sdk.sh manually after cloning
             ]
         ),
         .plugin(
