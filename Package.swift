@@ -25,7 +25,9 @@ let package = Package(
             cSettings: [
                 .headerSearchPath("include"),
                 .unsafeFlags([
-                    "-fno-modules"
+                    "-fno-modules",
+                    "-F", "Python.xcframework/ios-arm64",
+                    "-F", "Python.xcframework/ios-arm64_x86_64-simulator"
                 ])
             ]
         ),
