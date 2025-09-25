@@ -42,7 +42,7 @@ public final class NovinIntelligence: @unchecked Sendable {
         }
         
         return try await withCheckedThrowingContinuation { continuation in
-            processingQueue.async {
+            processingQueue.async(execute: {
                 let result = self.pythonBridge.processRequest(requestJson)
                 
                 switch result {
@@ -56,7 +56,7 @@ public final class NovinIntelligence: @unchecked Sendable {
                 case .failure(let error):
                     continuation.resume(throwing: error)
                 }
-            }
+            })
         }
     }
     
